@@ -1,25 +1,116 @@
----
+=======
 title: "Reproducible Research: Peer Assessment 1"
 output: 
   html_document:
     keep_md: true
 ---
 
+This assignment makes use of data from a personal activity monitoring device. This device collects data at 5 minute intervals through out the day. The data consists of two months of data from an anonymous individual collected during the months of October and November, 2012 and include the number of steps taken in 5 minute intervals each day.
 
-## Loading and preprocessing the data
+##Loading and preprocessing the data
+
+The first step is to download, unpack and read the data. We also load the package *lubridate*.
+```{r}
+if(!file.exists("activity.zip")) {download.file("https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip", "activity.zip", method = "curl")}
+if(!file.exists("activity.csv")) {unzip("activity.zip", exdir = "./")}
+activity_raw <- read.csv("./activity.csv", 
+                         header = TRUE, 
+                         stringsAsFactors = FALSE, 
+                         na.strings = "NA", 
+                         colClasses = c("integer", "character", "integer"))
+```
+
+The data is processed in order to create a variable with date and time of the mesurements. We also load the package *lubridate*.
+
+```{r}
+library(lubridate)
+activity <- data.frame(steps = activity_raw$steps)
+activity$interval <- formatC(activity_raw$interval, width = 4, flag = "0")
+activity$interval <- paste(substr(activity$interval, 1, 2), substr(activity$interval, 3, 4), sep = ":")
+activity$date.time <- paste(activity_raw$date, activity$interval)
+activity$date.time <- ymd_hm(activity$date.time)
+```
+
+##What is mean total number of steps taken per day?
+
+For this question missing values are ignored. The first chunk of the code calculate the total number of steps taken per day.
+
+```{r}
+activity1 <- activity[!is.na(activity$steps), ]#ignore missing values
+activity1$date <- as.Date(activity1$date.time)#strip the time of the day, leaving the date only
+summary1 <- aggregate(steps ~ date, activity1, FUN = sum)#aggregate by the date
+```
+
+The following plot illustrates the distribution of the total number of steps taken each day. The interval of steps taken with higher frequency is between 10000 and 12000.
+
+```{r}
+hist(summary1$steps, breaks = 10, 
+     main = "Distribution of the total number of steps taken each day",
+     xlab = "Number of steps",
+     axes = FALSE)
+axis(1, at = c(0, 4000, 8000, 12000, 16000, 20000, 24000))
+axis(2, at = c(0, 4, 8, 12, 16))
+```
+
+The following table shows the median and the mean values:
+
+```{r}
+summary(round(summary1$steps))
+```
+
+##What is the average daily activity pattern?
+
+Summary2 presents the aggregation of the average number of steps in the 5min-interval of the day. The data is processed in order to be plot.
+
+```{r}
+summary2 <- aggregate(steps ~ interval, activity1, FUN = mean)
+summary2$steps <- round(summary2$steps)
+summary2$interval <- paste("0000-01-01", paste(summary2$interval, "00", sep = ":"), sep = " ") #create a POSIXcl columns with the average of the days. The fictitious date 0000-01-01 is added 
+summary2$interval <- ymd_hms(summary2$interval)
+```
+
+The plot shows a clear peak at the time 8:35, with the maximum average number of steps measured. There are another smaller peaks at around 12, 16 and 19.
+
+```{r}
+plot(summary2$interval, 
+     summary2$steps, 
+     type = "l", 
+     xlab = "Time of the Day", 
+     ylab = "Number of Steps")
+abline(v = summary2$interval[which.max(summary2$steps)], col = "red")
+title("Average number of steps taken by interval of 5 min, \naveraged across all days")
+text(summary2$interval[which.max(summary2$steps)] + 20000,
+     y = summary2$steps[which.max(summary2$steps)] -10,
+     labels = paste("At Time:", paste(hour(summary2$interval[which.max(summary2$steps)]),
+                                      minute(summary2$interval[which.max(summary2$steps)]), 
+                                      sep = ":"), 
+                    sep = " "), 
+     col = "red")
+text(summary2$interval[which.max(summary2$steps)] + 20000,
+     y = summary2$steps[which.max(summary2$steps)],
+     labels = paste("Maximum Number of Steps: ", 
+                    max(summary2$steps), 
+                    sep = " "), 
+     col = "red")
+```
+
+The maximum average number of steps is 
+```{r}
+max(summary2$steps)
+```
+at the time
+```{r}
+paste(hour(summary2$interval[which.max(summary2$steps)]),
+                                      minute(summary2$interval[which.max(summary2$steps)]), 
+                                      sep = ":")
+```
 
 
 
-## What is mean total number of steps taken per day?
 
 
-
-## What is the average daily activity pattern?
-
-
-
-## Imputing missing values
 
 
 
 ## Are there differences in activity patterns between weekdays and weekends?
+>>>>>>> 80edf39c3bb508fee88e3394542f967dd3fd3270
