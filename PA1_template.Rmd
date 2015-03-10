@@ -1,6 +1,6 @@
 
-"Reproducible Research: Peer Assessment 1"
-===========================================
+Reproducible Research: Peer Assessment 1
+========================================= 
 
 
 This assignment makes use of data from a personal activity monitoring device. This device collects data at 5 minute intervals through out the day. The data consists of two months of data from an anonymous individual collected during the months of October and November, 2012 and include the number of steps taken in 5 minute intervals each day.
@@ -62,6 +62,7 @@ summary(round(summary1$steps))
 Summary2 presents the aggregation of the average number of steps in the 5min-interval of the day. The data is processed in order to be plot.
 
 ```{r Question2 - Average daily activity pattern}
+library(lubridate)
 summary2 <- aggregate(steps ~ interval, activity1, FUN = mean)
 summary2$steps <- round(summary2$steps)
 summary2$interval <- paste("0000-01-01", paste(summary2$interval, sep = ":"), sep = " ") #create a POSIXcl columns with the average of the days. The fictitious date 0000-01-01 is added 
@@ -176,18 +177,21 @@ axis(1, at = c(0, 4000, 8000, 12000, 16000, 20000, 24000))
 Create a new factor variable in the dataset with two levels – “weekday” and “weekend” indicating whether a given date is a weekday or weekend day.
 
 ```{r Question4 - Processing summary4}
-week_type <- vector(mode = "character", length = length(activity1$steps))
+library(lubridate)
+day_type <- vector(mode = "character", length = length(activity1$steps))
 for(i in 1:length(activity1$date.time)) {
-      if(weekdays(activity1$date.time[i]) == "Saturday" || weekdays(activity1$date.time[i]) == "Sunday")  { week_type[i] <- "weekend"  }
-      else { week_type[i] <- "weekday"   }
+      if(weekdays(activity1$date.time[i]) == "Saturday" || weekdays(activity1$date.time[i]) == "Sunday")  { day_type[i] <- "weekend"  }
+      else { day_type[i] <- "weekday"   }
       }
-activity4 <- cbind(activity1, week_type = as.factor(week_type))
-summary4 <- aggregate(steps ~ interval + week_type, activity4, FUN = mean)
+activity4 <- cbind(activity1, day_type = as.factor(day_type))
+summary4 <- aggregate(steps ~ interval + day_type, activity4, FUN = mean)
 summary4$steps <- round(summary4$steps)
 summary4$interval <- paste("0000-01-01", paste(summary4$interval, sep = ":"), sep = " ") #create a POSIXcl columns with the average of the days. The fictitious date 0000-01-01 is added 
 summary4$interval <- ymd_hms(summary4$interval)
 
 ```
+
+Make a panel plot containing a time series plot (i.e. type = “l”) of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all weekday days or weekend days (y-axis).
 
 ```{r Question4 - Graph.5, fig.width=9}
 par(mfrow = c(2, 1),     
@@ -196,30 +200,49 @@ par(mfrow = c(2, 1),
     mgp = c(2, 1, 0),    
     xpd = NA)
 #plot above WEEKEND
-
-plot(summary4$interval[summary4$week_type == "weekend"],
-     summary4$steps[summary4$week_type == "weekend"],
+plot(summary4$interval[summary4$day_type == "weekend"],
+     summary4$steps[summary4$day_type == "weekend"],
      axes = FALSE,
      type = "l",
      xlab = "",
-     ylab = "Number of steps"
+     ylab = "Number of steps",
+     ylim = c(0, 250),
+     cex.main = 0.8,
+     main = "Graph2. Average number of steps taken by interval of 5 min, \naveraged across all days \nWEEKEND"
      )
+
 axis(2, at = c(0,50, 100, 150, 200, 250))
-#axis(3)
-#axis(4)
 #plot below WEEKDAY
-plot(summary4$interval[summary4$week_type == "weekday"],
-     summary4$steps[summary4$week_type == "weekday"],
+plot(summary4$interval[summary4$day_type == "weekday"],
+     summary4$steps[summary4$day_type == "weekday"],
      axes = FALSE,
      type = "l",
      xlab = "Time of the day",
-     ylab = "Number of steps")
-axis.POSIXct(x = summary4$interval[summary4$week_type == "weekday"], side = 1)
+     ylab = "Number of steps",
+     ylim = c(0, 250),
+     cex.main = 0.8,
+     main = "WEEKDAYS")
+
+axis.POSIXct(x = summary4$interval[summary4$day_type == "weekday"], side = 1)
 axis(2, at = c(0,50, 100, 150, 200, 250))
-#axis(3)
-#axis(4)
 
+```
 
+The following table shows a summary of the of the steps across all intervals and days by Weekdays/Weekends
+
+```{r Summary weekdays/weekend}
+
+tapply(summary4$steps, summary4$day_type, 
+       function(x) {
+             c(MINIMUM = round(min(x)), 
+               MEAN = round(mean(x)), 
+               MEDIAN = round(median(x)), 
+               MAXIMUM = round(max(x)),
+               STANDARD.DEVIATION = round(sd(x), digits = 2),
+               COEFF.VARIATION = round((sd(x)/mean(x)), digits = 2)
+               )
+             }
+       )
 ```
 
 
