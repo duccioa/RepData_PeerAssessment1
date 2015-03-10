@@ -8,7 +8,7 @@ This assignment makes use of data from a personal activity monitoring device. Th
 ##Loading and preprocessing the data
 
 The first step is to download, unpack and read the data. We also load the package *lubridate*.
-```{r}
+```{r Loading and preprocessing data}
 if(!file.exists("activity.zip")) {download.file("https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip", "activity.zip", method = "curl")}
 if(!file.exists("activity.csv")) {unzip("activity.zip", exdir = "./")}
 activity_raw <- read.csv("./activity.csv", 
@@ -20,7 +20,7 @@ activity_raw <- read.csv("./activity.csv",
 
 The data is processed in order to create a variable with date and time of the mesurements. We also load the package *lubridate*.
 
-```{r}
+```{r Processing data}
 library(lubridate)
 activity <- data.frame(steps = activity_raw$steps)
 activity$interval <- formatC(activity_raw$interval, width = 4, flag = "0")
@@ -33,7 +33,7 @@ activity$date.time <- ymd_hms(activity$date.time)
 
 For this question missing values are ignored. The first chunk of the code calculate the total number of steps taken per day.
 
-```{r}
+```{r Question1 - Mean total number of steps taken per day}
 activity1 <- activity[!is.na(activity$steps), ]#ignore missing values
 activity1$date <- as.Date(activity1$date.time)#strip the time of the day, leaving the date only
 summary1 <- aggregate(steps ~ date, activity1, FUN = sum)#aggregate by the date
@@ -41,19 +41,19 @@ summary1 <- aggregate(steps ~ date, activity1, FUN = sum)#aggregate by the date
 
 The following plot illustrates the distribution of the total number of steps taken each day. The interval of steps taken with higher frequency is between 10000 and 12000.
 
-```{r}
+```{r Question1 - Plot Graph1}
 hist(summary1$steps, breaks = 10, 
      main = "Graph1. Distribution of the total number of steps taken each day",
      xlab = "Number of steps",
      axes = FALSE,
-     col = "grey")
+     col = "grey", cex.main = 1)
 axis(1, at = c(0, 4000, 8000, 12000, 16000, 20000, 24000))
 axis(2, at = c(0, 4, 8, 12, 16))
 ```
 
 The following table shows the median and the mean values:
 
-```{r}
+```{r Question1 - Mean and median}
 summary(round(summary1$steps))
 ```
 
@@ -61,7 +61,7 @@ summary(round(summary1$steps))
 
 Summary2 presents the aggregation of the average number of steps in the 5min-interval of the day. The data is processed in order to be plot.
 
-```{r}
+```{r Question2 - Average daily activity pattern}
 summary2 <- aggregate(steps ~ interval, activity1, FUN = mean)
 summary2$steps <- round(summary2$steps)
 summary2$interval <- paste("0000-01-01", paste(summary2$interval, sep = ":"), sep = " ") #create a POSIXcl columns with the average of the days. The fictitious date 0000-01-01 is added 
@@ -70,7 +70,7 @@ summary2$interval <- ymd_hms(summary2$interval)
 
 The plot shows a clear peak at the time 8:35, with the maximum average number of steps measured. There are another smaller peaks at around 12, 16 and 19.
 
-```{r}
+```{r Question2 - Graph2}
 plot(summary2$interval, 
      summary2$steps, 
      type = "l", 
@@ -94,36 +94,36 @@ text(summary2$interval[which.max(summary2$steps)] + 20000,
 ```
 
 The maximum average number of steps is 
-```{r}
+```{r Question2 - Max avg steps}
 max(summary2$steps)
 ```
 at the time
 ```{r}
 paste(hour(summary2$interval[which.max(summary2$steps)]),
-                                      minute(summary2$interval[which.max(summary2$steps)]), 
-                                      sep = ":")
+      minute(summary2$interval[which.max(summary2$steps)]), 
+      sep = ":")
 ```
 
 ## Imputing missing values
 The total number of values missing in the data is:
 
-```{r}
+```{r Question3 - Number of NAs}
 length(activity_raw[(is.na(activity_raw$steps)),1])
 ```
 
 A new dataset is created with the missing values filled with the number of steps taken in each 5min-interval averaged accross all days.
 
-```{r}
+```{r Question3 - Process summary3}
 summary3_interval <- aggregate(steps ~ interval, activity1, FUN = mean) # average of steps per interval accross all days
 summary3_interval$steps <- round(summary3_interval$steps)
 activity3 <- activity
 for(i in 1:length(activity3$steps)) { #across the length of the dateset
       if(is.na(activity3$steps[i])) { #each missing value is replaced
-        interval <- activity3$interval[i] 
-        mean <- summary3_interval[which(summary3_interval$interval == interval),2] #with the average of steps of each 5min-interval
-        activity3$steps[i] <- mean
-      } 
-}
+            interval <- activity3$interval[i] 
+            mean <- summary3_interval[which(summary3_interval$interval == interval),2] #with the average of steps of each 5min-interval
+            activity3$steps[i] <- mean
+            } 
+      }
 rm(summary3_interval, i, interval, mean)
 activity3$date <- as.Date(activity3$date.time)
 summary3_day <- aggregate(steps ~ date, activity3, FUN = sum)
@@ -131,15 +131,27 @@ summary3_day <- aggregate(steps ~ date, activity3, FUN = sum)
 
 The following tables show the comparison between ignoring or replacing the missing values. The mean and the median values stay the same, as expected (having added he missing values as mean values), although the distribution is more compact as we can see from the 1st and 3rd quartiles getting closer to the median.
 
-```{r}
+```{r Question3 - Comparison table}
 comparison_day <- rbind(summary(summary1$steps), summary(summary3_day$steps))
 ```
 
-```{r}
+From the analysis of the distribution, it is clear that the method chosen to fill the missing values only increases the frequency of the mode and in this case it does not seem to be a valuable strategy.
+
+
+```{r Question3 - Plot comparison (Graph1 and Graph3), fig.width=9}
+#par(mfrow = c(1,2))
+#par(mar = c(2.5, 3.5, 1, 0.5))
+#par(mpg = c(1.5,0.5,0))
+par(mfrow = c(1, 2),     
+    oma = c(2, 2, 0, 0), 
+    mar = c(1, 2, 3, 1.5), 
+    mgp = c(2, 1, 0),    
+    xpd = NA)
 
 #replotting Graph1
 hist(summary1$steps, breaks = 10, 
-     main = "Graph1. Distribution of the total number of steps taken each day, \nmissing values removed",
+     cex.main = 0.8, 
+     main = "Graph1. Distribution of the total number \nof steps taken each day, \nmissing values removed",
      xlab = "Number of steps",
      axes = FALSE,
      ylim = c(0, 24),
@@ -147,15 +159,72 @@ hist(summary1$steps, breaks = 10,
 axis(1, at = c(0, 4000, 8000, 12000, 16000, 20000, 24000))
 axis(2, at = c(0, 4, 8, 12, 16, 18, 20, 22, 24))
 #plotting Graph3 with the filled missing values
-hist(summary3_day$steps, breaks = 10, 
-     main = "Graph3. Distribution of the total number of steps taken each day, \nmissing values filled in",
+hist(summary3_day$steps, breaks = 10,
+     cex.main = 0.8,
+     main = "Graph3. Distribution of the total number \nof steps taken each day, \nmissing values filled in",
      xlab = "Number of steps",
+     ylab = "",
      axes = FALSE,
      ylim = c(0, 24),
      col = "grey")
 axis(1, at = c(0, 4000, 8000, 12000, 16000, 20000, 24000))
-axis(2, at = c(0, 4, 8, 12, 16, 18, 20, 22, 24))
+
 ```
 
 ## Are there differences in activity patterns between weekdays and weekends?
->>>>>>> 80edf39c3bb508fee88e3394542f967dd3fd3270
+
+Create a new factor variable in the dataset with two levels – “weekday” and “weekend” indicating whether a given date is a weekday or weekend day.
+
+```{r Question4 - Processing summary4}
+week_type <- vector(mode = "character", length = length(activity1$steps))
+for(i in 1:length(activity1$date.time)) {
+      if(weekdays(activity1$date.time[i]) == "Saturday" || weekdays(activity1$date.time[i]) == "Sunday")  { week_type[i] <- "weekend"  }
+      else { week_type[i] <- "weekday"   }
+      }
+activity4 <- cbind(activity1, week_type = as.factor(week_type))
+summary4 <- aggregate(steps ~ interval + week_type, activity4, FUN = mean)
+summary4$steps <- round(summary4$steps)
+summary4$interval <- paste("0000-01-01", paste(summary4$interval, sep = ":"), sep = " ") #create a POSIXcl columns with the average of the days. The fictitious date 0000-01-01 is added 
+summary4$interval <- ymd_hms(summary4$interval)
+
+```
+
+```{r Question4 - Graph.5, fig.width=9}
+par(mfrow = c(2, 1),     
+    oma = c(2, 2, 0, 0), 
+    mar = c(1, 2, 3, 1.5), 
+    mgp = c(2, 1, 0),    
+    xpd = NA)
+#plot above WEEKEND
+
+plot(summary4$interval[summary4$week_type == "weekend"],
+     summary4$steps[summary4$week_type == "weekend"],
+     axes = FALSE,
+     type = "l",
+     xlab = "",
+     ylab = "Number of steps"
+     )
+axis(2, at = c(0,50, 100, 150, 200, 250))
+#axis(3)
+#axis(4)
+#plot below WEEKDAY
+plot(summary4$interval[summary4$week_type == "weekday"],
+     summary4$steps[summary4$week_type == "weekday"],
+     axes = FALSE,
+     type = "l",
+     xlab = "Time of the day",
+     ylab = "Number of steps")
+axis.POSIXct(x = summary4$interval[summary4$week_type == "weekday"], side = 1)
+axis(2, at = c(0,50, 100, 150, 200, 250))
+#axis(3)
+#axis(4)
+
+
+```
+
+
+
+
+
+
+
