@@ -1,9 +1,7 @@
-=======
-title: "Reproducible Research: Peer Assessment 1"
-output: 
-  html_document:
-    keep_md: true
----
+
+"Reproducible Research: Peer Assessment 1"
+===========================================
+
 
 This assignment makes use of data from a personal activity monitoring device. This device collects data at 5 minute intervals through out the day. The data consists of two months of data from an anonymous individual collected during the months of October and November, 2012 and include the number of steps taken in 5 minute intervals each day.
 
@@ -26,9 +24,9 @@ The data is processed in order to create a variable with date and time of the me
 library(lubridate)
 activity <- data.frame(steps = activity_raw$steps)
 activity$interval <- formatC(activity_raw$interval, width = 4, flag = "0")
-activity$interval <- paste(substr(activity$interval, 1, 2), substr(activity$interval, 3, 4), sep = ":")
+activity$interval <- paste(substr(activity$interval, 1, 2), substr(activity$interval, 3, 4), "00", sep = ":")
 activity$date.time <- paste(activity_raw$date, activity$interval)
-activity$date.time <- ymd_hm(activity$date.time)
+activity$date.time <- ymd_hms(activity$date.time)
 ```
 
 ##What is mean total number of steps taken per day?
@@ -45,9 +43,10 @@ The following plot illustrates the distribution of the total number of steps tak
 
 ```{r}
 hist(summary1$steps, breaks = 10, 
-     main = "Distribution of the total number of steps taken each day",
+     main = "Graph1. Distribution of the total number of steps taken each day",
      xlab = "Number of steps",
-     axes = FALSE)
+     axes = FALSE,
+     col = "grey")
 axis(1, at = c(0, 4000, 8000, 12000, 16000, 20000, 24000))
 axis(2, at = c(0, 4, 8, 12, 16))
 ```
@@ -65,7 +64,7 @@ Summary2 presents the aggregation of the average number of steps in the 5min-int
 ```{r}
 summary2 <- aggregate(steps ~ interval, activity1, FUN = mean)
 summary2$steps <- round(summary2$steps)
-summary2$interval <- paste("0000-01-01", paste(summary2$interval, "00", sep = ":"), sep = " ") #create a POSIXcl columns with the average of the days. The fictitious date 0000-01-01 is added 
+summary2$interval <- paste("0000-01-01", paste(summary2$interval, sep = ":"), sep = " ") #create a POSIXcl columns with the average of the days. The fictitious date 0000-01-01 is added 
 summary2$interval <- ymd_hms(summary2$interval)
 ```
 
@@ -78,7 +77,7 @@ plot(summary2$interval,
      xlab = "Time of the Day", 
      ylab = "Number of Steps")
 abline(v = summary2$interval[which.max(summary2$steps)], col = "red")
-title("Average number of steps taken by interval of 5 min, \naveraged across all days")
+title("Graph2. Average number of steps taken by interval of 5 min, \naveraged across all days")
 text(summary2$interval[which.max(summary2$steps)] + 20000,
      y = summary2$steps[which.max(summary2$steps)] -10,
      labels = paste("At Time:", paste(hour(summary2$interval[which.max(summary2$steps)]),
@@ -105,12 +104,58 @@ paste(hour(summary2$interval[which.max(summary2$steps)]),
                                       sep = ":")
 ```
 
+## Imputing missing values
+The total number of values missing in the data is:
 
+```{r}
+length(activity_raw[(is.na(activity_raw$steps)),1])
+```
 
+A new dataset is created with the missing values filled with the number of steps taken in each 5min-interval averaged accross all days.
 
+```{r}
+summary3_interval <- aggregate(steps ~ interval, activity1, FUN = mean) # average of steps per interval accross all days
+summary3_interval$steps <- round(summary3_interval$steps)
+activity3 <- activity
+for(i in 1:length(activity3$steps)) { #across the length of the dateset
+      if(is.na(activity3$steps[i])) { #each missing value is replaced
+        interval <- activity3$interval[i] 
+        mean <- summary3_interval[which(summary3_interval$interval == interval),2] #with the average of steps of each 5min-interval
+        activity3$steps[i] <- mean
+      } 
+}
+rm(summary3_interval, i, interval, mean)
+activity3$date <- as.Date(activity3$date.time)
+summary3_day <- aggregate(steps ~ date, activity3, FUN = sum)
+```
 
+The following tables show the comparison between ignoring or replacing the missing values. The mean and the median values stay the same, as expected (having added he missing values as mean values), although the distribution is more compact as we can see from the 1st and 3rd quartiles getting closer to the median.
 
+```{r}
+comparison_day <- rbind(summary(summary1$steps), summary(summary3_day$steps))
+```
 
+```{r}
+
+#replotting Graph1
+hist(summary1$steps, breaks = 10, 
+     main = "Graph1. Distribution of the total number of steps taken each day, \nmissing values removed",
+     xlab = "Number of steps",
+     axes = FALSE,
+     ylim = c(0, 24),
+     col = "grey")
+axis(1, at = c(0, 4000, 8000, 12000, 16000, 20000, 24000))
+axis(2, at = c(0, 4, 8, 12, 16, 18, 20, 22, 24))
+#plotting Graph3 with the filled missing values
+hist(summary3_day$steps, breaks = 10, 
+     main = "Graph3. Distribution of the total number of steps taken each day, \nmissing values filled in",
+     xlab = "Number of steps",
+     axes = FALSE,
+     ylim = c(0, 24),
+     col = "grey")
+axis(1, at = c(0, 4000, 8000, 12000, 16000, 20000, 24000))
+axis(2, at = c(0, 4, 8, 12, 16, 18, 20, 22, 24))
+```
 
 ## Are there differences in activity patterns between weekdays and weekends?
 >>>>>>> 80edf39c3bb508fee88e3394542f967dd3fd3270
