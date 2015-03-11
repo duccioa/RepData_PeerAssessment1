@@ -41,7 +41,7 @@ For this question missing values are ignored. The first chunk of the code calcul
 ```r
 activity1 <- activity[!is.na(activity$steps), ]#remove missing values
 activity1$date <- as.Date(activity1$date.time)#strip the time of the day, leaving the date only
-summary1 <- aggregate(steps ~ date, activity1, FUN = sum)#aggregate by the date
+summary1 <- aggregate(steps ~ date, activity1, FUN = "sum")#aggregate by the date
 ```
 
 The following plot illustrates the distribution of the total number of steps taken each day. The interval of steps taken with higher frequency is between 10000 and 12000.
@@ -78,7 +78,7 @@ Summary2 presents the aggregation of the average number of steps in the 5min-int
 
 ```r
 library(lubridate)
-summary2 <- aggregate(steps ~ interval, activity1, FUN = mean)
+summary2 <- aggregate(steps ~ interval, activity1, FUN = "mean")
 summary2$steps <- round(summary2$steps)
 summary2$interval <- paste("0000-01-01", paste(summary2$interval, sep = ":"), sep = " ") #create a POSIXcl columns with the average of the days. The fictitious date 0000-01-01 is added to be able to use a date format
 summary2$interval <- ymd_hms(summary2$interval)
@@ -149,7 +149,7 @@ A new dataset is created with the missing values filled with the number of steps
 
 
 ```r
-summary3_interval <- aggregate(steps ~ interval, activity1, FUN = mean) # average of steps per interval accross all days
+summary3_interval <- aggregate(steps ~ interval, activity1, FUN = "mean") # average of steps per interval accross all days
 summary3_interval$steps <- round(summary3_interval$steps)
 activity3 <- activity
 for(i in 1:length(activity3$steps)) { #across the length of the dateset
@@ -160,10 +160,29 @@ for(i in 1:length(activity3$steps)) { #across the length of the dateset
             } 
       }
 activity3$date <- as.Date(activity3$date.time)
-summary3_day <- aggregate(steps ~ date, activity3, FUN = sum)
+summary3_day <- aggregate(steps ~ date, activity3, FUN = "sum")
 ```
 
-The following tables show the comparison between ignoring or replacing the missing values. The mean and the median values are the same, as expected (having added the missing values as mean values), although the distribution is more compact as we can see from the 1st and 3rd quartiles getting closer to the median.
+Make a histogram of the total number of steps taken each day and Calculate and report the mean and median total number of steps taken per day.
+
+
+```r
+par(mfrow = c(1,1))
+hist(summary3_day$steps, breaks = 10,
+     cex.main = 0.8,
+     main = "Graph3. Distribution of the total number \nof steps taken each day, \nmissing values filled in",
+     xlab = "Number of steps",
+     ylab = "",
+     axes = FALSE,
+     ylim = c(0, 24),
+     col = "grey")
+axis(1, at = c(0, 4000, 8000, 12000, 16000, 20000, 24000))
+axis(2, at = c(0, 4, 8, 12, 16, 18, 20, 22, 24))
+```
+
+![plot of chunk Graph3](figure/Graph3-1.png) 
+
+The following tables show the comparison between ignoring or replacing the missing values. The mean and the median values are the same as expected (having added the missing values as mean values), although the distribution is more compact as we can see from the 1st and 3rd quartiles getting closer to the median.
 
 
 ```r
@@ -181,9 +200,6 @@ From the following graph we note that the only change is an increase in the freq
 
 
 ```r
-#par(mfrow = c(1,2))
-#par(mar = c(2.5, 3.5, 1, 0.5))
-#par(mpg = c(1.5,0.5,0))
 par(mfrow = c(1, 2),     
     oma = c(2, 2, 0, 0), 
     mar = c(1, 2, 3, 1.5), 
@@ -227,35 +243,10 @@ for(i in 1:length(activity1$date.time)) {
       else { day_type[i] <- "weekday"   }
       }
 activity4 <- cbind(activity1, day_type = as.factor(day_type))
-summary4 <- aggregate(steps ~ interval + day_type, activity4, FUN = mean)
-```
-
-```
-## Error in get(as.character(FUN), mode = "function", envir = envir): object 'FUN' of mode 'function' was not found
-```
-
-```r
+summary4 <- aggregate(steps ~ interval + day_type, activity4, FUN = "mean")
 summary4$steps <- round(summary4$steps)
-```
-
-```
-## Error in eval(expr, envir, enclos): object 'summary4' not found
-```
-
-```r
 summary4$interval <- paste("0000-01-01", paste(summary4$interval, sep = ":"), sep = " ") #create a POSIXcl columns with the average of the days. The fictitious date 0000-01-01 is added 
-```
-
-```
-## Error in paste(summary4$interval, sep = ":"): object 'summary4' not found
-```
-
-```r
 summary4$interval <- ymd_hms(summary4$interval)
-```
-
-```
-## Error in lapply(list(...), .num_to_date): object 'summary4' not found
 ```
 
 Make a panel plot containing a time series plot (i.e. type = “l”) of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all weekday days or weekend days (y-axis).
@@ -276,23 +267,10 @@ plot(summary4$interval[summary4$day_type == "weekend"],
      ylab = "Number of steps",
      ylim = c(0, 250),
      cex.main = 0.8,
-     main = "Graph2. Average number of steps taken by interval of 5 min, \naveraged across all days \nWEEKEND"
+     main = "Graph2. Average number of steps taken by interval of 5 min, \naveraged across all days \nWEEKENDS"
      )
-```
 
-```
-## Error in plot(summary4$interval[summary4$day_type == "weekend"], summary4$steps[summary4$day_type == : object 'summary4' not found
-```
-
-```r
 axis(2, at = c(0,50, 100, 150, 200, 250))
-```
-
-```
-## Error in axis(2, at = c(0, 50, 100, 150, 200, 250)): plot.new has not been called yet
-```
-
-```r
 #plot below WEEKDAY
 plot(summary4$interval[summary4$day_type == "weekday"],
      summary4$steps[summary4$day_type == "weekday"],
@@ -303,27 +281,12 @@ plot(summary4$interval[summary4$day_type == "weekday"],
      ylim = c(0, 250),
      cex.main = 0.8,
      main = "WEEKDAYS")
-```
 
-```
-## Error in plot(summary4$interval[summary4$day_type == "weekday"], summary4$steps[summary4$day_type == : object 'summary4' not found
-```
-
-```r
 axis.POSIXct(x = summary4$interval[summary4$day_type == "weekday"], side = 1)
-```
-
-```
-## Error in as.POSIXct(x): object 'summary4' not found
-```
-
-```r
 axis(2, at = c(0,50, 100, 150, 200, 250))
 ```
 
-```
-## Error in axis(2, at = c(0, 50, 100, 150, 200, 250)): plot.new has not been called yet
-```
+![plot of chunk Question4 - Graph.5](figure/Question4 - Graph.5-1.png) 
 
 During the weekdays the average number of steps is concentrated in the morning and during the day there is relativly less activity and with less variance.
 During weekends the activity is slightly shifted to the right by about an hour and half, meaning the activity during the day happens later. The peak in the morning is less pronounced but the average during the rest of the day is higher and with higher variance.
@@ -345,7 +308,17 @@ tapply(summary4$steps, summary4$day_type,
 ```
 
 ```
-## Error in tapply(summary4$steps, summary4$day_type, function(x) {: object 'summary4' not found
+## $weekday
+##            MINIMUM               MEAN             MEDIAN 
+##               0.00              35.00              24.00 
+##            MAXIMUM STANDARD.DEVIATION    COEFF.VARIATION 
+##             234.00              42.26               1.20 
+## 
+## $weekend
+##            MINIMUM               MEAN             MEDIAN 
+##               0.00              43.00              32.00 
+##            MAXIMUM STANDARD.DEVIATION    COEFF.VARIATION 
+##             175.00              44.41               1.03
 ```
 
 
