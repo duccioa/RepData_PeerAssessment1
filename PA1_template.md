@@ -7,7 +7,7 @@ This assignment makes use of data from a personal activity monitoring device. Th
 
 ##Loading and preprocessing the data
 
-The first step is to download, unpack and read the data. We also load the package *lubridate*.
+The first step is to download, unpack and read the data. 
 
 ```r
 if(!file.exists("activity.zip")) {download.file("https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip", "activity.zip", method = "curl")}
@@ -25,9 +25,11 @@ The data is processed in order to create a variable with date and time of the me
 ```r
 library(lubridate)
 activity <- data.frame(steps = activity_raw$steps)
+#modify format to convert to date format
 activity$interval <- formatC(activity_raw$interval, width = 4, flag = "0")
 activity$interval <- paste(substr(activity$interval, 1, 2), substr(activity$interval, 3, 4), "00", sep = ":")
 activity$date.time <- paste(activity_raw$date, activity$interval)
+#convert to date format with lubridate
 activity$date.time <- ymd_hms(activity$date.time)
 ```
 
@@ -37,7 +39,7 @@ For this question missing values are ignored. The first chunk of the code calcul
 
 
 ```r
-activity1 <- activity[!is.na(activity$steps), ]#ignore missing values
+activity1 <- activity[!is.na(activity$steps), ]#remove missing values
 activity1$date <- as.Date(activity1$date.time)#strip the time of the day, leaving the date only
 summary1 <- aggregate(steps ~ date, activity1, FUN = sum)#aggregate by the date
 ```
@@ -78,7 +80,7 @@ Summary2 presents the aggregation of the average number of steps in the 5min-int
 library(lubridate)
 summary2 <- aggregate(steps ~ interval, activity1, FUN = mean)
 summary2$steps <- round(summary2$steps)
-summary2$interval <- paste("0000-01-01", paste(summary2$interval, sep = ":"), sep = " ") #create a POSIXcl columns with the average of the days. The fictitious date 0000-01-01 is added 
+summary2$interval <- paste("0000-01-01", paste(summary2$interval, sep = ":"), sep = " ") #create a POSIXcl columns with the average of the days. The fictitious date 0000-01-01 is added to be able to use a date format
 summary2$interval <- ymd_hms(summary2$interval)
 ```
 
@@ -110,7 +112,7 @@ text(summary2$interval[which.max(summary2$steps)] + 20000,
 
 ![plot of chunk Question2 - Graph2](figure/Question2 - Graph2-1.png) 
 
-The maximum average number of steps is 
+The maximum average number of steps is: 
 
 ```r
 max(summary2$steps)
@@ -119,7 +121,7 @@ max(summary2$steps)
 ```
 ## [1] 206
 ```
-at the time
+recorded at the interval time:
 
 ```r
 paste(hour(summary2$interval[which.max(summary2$steps)]),
@@ -157,19 +159,24 @@ for(i in 1:length(activity3$steps)) { #across the length of the dateset
             activity3$steps[i] <- mean
             } 
       }
-rm(summary3_interval, i, interval, mean)
 activity3$date <- as.Date(activity3$date.time)
 summary3_day <- aggregate(steps ~ date, activity3, FUN = sum)
 ```
 
-The following tables show the comparison between ignoring or replacing the missing values. The mean and the median values stay the same, as expected (having added he missing values as mean values), although the distribution is more compact as we can see from the 1st and 3rd quartiles getting closer to the median.
+The following tables show the comparison between ignoring or replacing the missing values. The mean and the median values are the same, as expected (having added the missing values as mean values), although the distribution is more compact as we can see from the 1st and 3rd quartiles getting closer to the median.
 
 
 ```r
-comparison_day <- rbind(summary(summary1$steps), summary(summary3_day$steps))
+rbind(summary(summary1$steps), summary(summary3_day$steps))
 ```
 
-From the analysis of the distribution, it is clear that the method chosen to fill the missing values only increases the frequency of the mode and in this case it does not seem to be a valuable strategy.
+```
+##      Min. 1st Qu. Median  Mean 3rd Qu.  Max.
+## [1,]   41    8841  10760 10770   13290 21190
+## [2,]   41    9819  10760 10770   12810 21190
+```
+
+From the following graph we note that the only change is an increase in the frequency of the mode. This is predictable as we added average values without adding any relevant information. Therefore the strategy used to replace values is not working
 
 
 
@@ -221,9 +228,34 @@ for(i in 1:length(activity1$date.time)) {
       }
 activity4 <- cbind(activity1, day_type = as.factor(day_type))
 summary4 <- aggregate(steps ~ interval + day_type, activity4, FUN = mean)
+```
+
+```
+## Error in get(as.character(FUN), mode = "function", envir = envir): object 'FUN' of mode 'function' was not found
+```
+
+```r
 summary4$steps <- round(summary4$steps)
+```
+
+```
+## Error in eval(expr, envir, enclos): object 'summary4' not found
+```
+
+```r
 summary4$interval <- paste("0000-01-01", paste(summary4$interval, sep = ":"), sep = " ") #create a POSIXcl columns with the average of the days. The fictitious date 0000-01-01 is added 
+```
+
+```
+## Error in paste(summary4$interval, sep = ":"): object 'summary4' not found
+```
+
+```r
 summary4$interval <- ymd_hms(summary4$interval)
+```
+
+```
+## Error in lapply(list(...), .num_to_date): object 'summary4' not found
 ```
 
 Make a panel plot containing a time series plot (i.e. type = “l”) of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all weekday days or weekend days (y-axis).
@@ -246,8 +278,21 @@ plot(summary4$interval[summary4$day_type == "weekend"],
      cex.main = 0.8,
      main = "Graph2. Average number of steps taken by interval of 5 min, \naveraged across all days \nWEEKEND"
      )
+```
 
+```
+## Error in plot(summary4$interval[summary4$day_type == "weekend"], summary4$steps[summary4$day_type == : object 'summary4' not found
+```
+
+```r
 axis(2, at = c(0,50, 100, 150, 200, 250))
+```
+
+```
+## Error in axis(2, at = c(0, 50, 100, 150, 200, 250)): plot.new has not been called yet
+```
+
+```r
 #plot below WEEKDAY
 plot(summary4$interval[summary4$day_type == "weekday"],
      summary4$steps[summary4$day_type == "weekday"],
@@ -258,13 +303,30 @@ plot(summary4$interval[summary4$day_type == "weekday"],
      ylim = c(0, 250),
      cex.main = 0.8,
      main = "WEEKDAYS")
+```
 
+```
+## Error in plot(summary4$interval[summary4$day_type == "weekday"], summary4$steps[summary4$day_type == : object 'summary4' not found
+```
+
+```r
 axis.POSIXct(x = summary4$interval[summary4$day_type == "weekday"], side = 1)
+```
+
+```
+## Error in as.POSIXct(x): object 'summary4' not found
+```
+
+```r
 axis(2, at = c(0,50, 100, 150, 200, 250))
 ```
 
-![plot of chunk Question4 - Graph.5](figure/Question4 - Graph.5-1.png) 
+```
+## Error in axis(2, at = c(0, 50, 100, 150, 200, 250)): plot.new has not been called yet
+```
 
+During the weekdays the average number of steps is concentrated in the morning and during the day there is relativly less activity and with less variance.
+During weekends the activity is slightly shifted to the right by about an hour and half, meaning the activity during the day happens later. The peak in the morning is less pronounced but the average during the rest of the day is higher and with higher variance.
 The following table shows a summary of the of the steps across all intervals and days by Weekdays/Weekends
 
 
@@ -283,17 +345,7 @@ tapply(summary4$steps, summary4$day_type,
 ```
 
 ```
-## $weekday
-##            MINIMUM               MEAN             MEDIAN 
-##               0.00              35.00              24.00 
-##            MAXIMUM STANDARD.DEVIATION    COEFF.VARIATION 
-##             234.00              42.26               1.20 
-## 
-## $weekend
-##            MINIMUM               MEAN             MEDIAN 
-##               0.00              43.00              32.00 
-##            MAXIMUM STANDARD.DEVIATION    COEFF.VARIATION 
-##             175.00              44.41               1.03
+## Error in tapply(summary4$steps, summary4$day_type, function(x) {: object 'summary4' not found
 ```
 
 
